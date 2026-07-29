@@ -9,7 +9,7 @@ from flask import Flask
 BOT_TOKEN = "8891177020:AAHemQBAUImmB_WYce_uAyDtSAKy5DYYVy0"  # የቦትህን ቶክን እዚህ አስገባ
 
 # ቻናሎች
-CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@aa_11_b1"] 
+CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@tech_zone_ya"
 PAYOUT_CHANNEL = "@proof_1621"  # የክፍያ ማረጋገጫ የሚለቀቅበት ቻናል
 
 ADMIN_ID = 8465808385           # የርስዎ የቴሌግራም ID
