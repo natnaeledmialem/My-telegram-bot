@@ -1,24 +1,49 @@
 import os
 import time
+import json
 from threading import Thread
 import telebot
 from telebot import types
 from flask import Flask
 
 # --- ማስተካከያ ቦታዎች ---
-BOT_TOKEN = "8891177020:AAHemQBAUImmB_WYce_uAyDtSAKy5DYYVy0"  # የቦትህን ቶክን እዚህ አስገባ
+BOT_TOKEN = "my bot token"  # የቦትህን ቶክን እዚህ አስገባ
 
-# ቻናሎች
+# ቻናሎች (አዲስ ቻናል እዚህ ጋር ማከል ትችላለህ)
 CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@tech_zone_ya"]
 PAYOUT_CHANNEL = "@proof_1621"  # የክፍያ ማረጋገጫ የሚለቀቅበት ቻናል
 
 ADMIN_ID = 8465808385           # የርስዎ የቴሌግራም ID
 REFERRAL_BONUS = 2.00 
 MIN_WITHDRAW = 20.00  
+DB_FILE = "users_db.json"
 # ---------------------
 
 bot = telebot.TeleBot(BOT_TOKEN)
-users_db = {}
+
+# ----------------------------------------------
+# JSON DATABASE HANDLING (መረጃ እንዳይጠፋ መያዣ)
+# ----------------------------------------------
+def load_db():
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, "r") as f:
+                data = json.load(f)
+                # JSON keys String ስለሆኑ ወደ Integer መለወጥ
+                return {int(k): v for k, v in data.items()}
+        except Exception as e:
+            print(f"DB ማንበብ አልተቻለም፦ {e}")
+            return {}
+    return {}
+
+def save_db(db):
+    try:
+        with open(DB_FILE, "w") as f:
+            json.dump(db, f, indent=4)
+    except Exception as e:
+        print(f"DB ማስቀመጥ አልተቻለም፦ {e}")
+
+users_db = load_db()
 
 # Render UptimeRobot እንዲያገኘው የ Flask Web Server ማስተካከያ
 app = Flask(__name__)
@@ -70,6 +95,7 @@ def start(message):
     user_id = message.from_user.id
     username = message.from_user.username or "ተጠቃሚ"
     
+    # ተጠቃሚው አዲስ ከሆነ ብቻ ፕሮፋይል መክፈት (ያለውን ዳታ አይሰርዝም)
     if user_id not in users_db:
         users_db[user_id] = {'balance': 0.0, 'referred_by': None, 'referred_count': 0}
         args = message.text.split()
@@ -80,6 +106,7 @@ def start(message):
                     users_db[user_id]['referred_by'] = referrer_id
             except ValueError:
                 pass
+        save_db(users_db)
 
     not_joined = get_not_joined_channels(user_id)
     
@@ -99,15 +126,18 @@ def start(message):
         )
         return
 
+    # ቻናሎቹን ተቀላቅሎ ከሆነና የሪፈራል ቦነስ ያልተሰጠ ከሆነ ቦነሱን መስጠት
     ref_id = users_db[user_id]['referred_by']
     if ref_id and users_db[user_id]['referred_count'] == 0:
-        users_db[ref_id]['balance'] += REFERRAL_BONUS
-        users_db[ref_id]['referred_count'] += 1
-        users_db[user_id]['referred_count'] = -1
-        try:
-            bot.send_message(ref_id, f"🎉 <b>አዲስ ሰው ጋብዘዋል!</b>\n<b>+{REFERRAL_BONUS} ብር</b> ወደ አካውንትዎ ተጨምሯል።", parse_mode="HTML")
-        except Exception:
-            pass
+        if ref_id in users_db:
+            users_db[ref_id]['balance'] += REFERRAL_BONUS
+            users_db[ref_id]['referred_count'] += 1
+            users_db[user_id]['referred_count'] = -1  # ቦነሱ ለጋባዡ መሰጠቱን ማረጋገጫ
+            save_db(users_db)
+            try:
+                bot.send_message(ref_id, f"🎉 <b>አዲስ ሰው ጋብዘዋል!</b>\n<b>+{REFERRAL_BONUS} ብር</b> ወደ አካውንትዎ ተጨምሯል።", parse_mode="HTML")
+            except Exception:
+                pass
 
     bot.send_message(
         user_id, 
@@ -173,6 +203,7 @@ def process_withdraw(message):
     username = message.from_user.username or "የሌለው"
 
     users_db[user_id]['balance'] = 0.0
+    save_db(users_db)
 
     admin_msg = (f"🚨 <b>አዲስ የማውጫ ጥያቄ ደርሷል!</b>\n\n"
                  f"👤 <b>ተጠቃሚ ID፦</b> <code>{user_id}</code>\n"
