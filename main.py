@@ -7,7 +7,7 @@ from telebot import types
 from flask import Flask
 
 # --- ማስተካከያ ቦታዎች ---
-BOT_TOKEN = "my bot token"  # የቦትህን ቶክን እዚህ አስገባ
+BOT_TOKEN = "8891177020:AAHemQBAUImmB_WYce_uAyDtSAKy5DYYVy0"  # የቦትህን ቶክን እዚህ አስገባ
 
 # ቻናሎች (አዲስ ቻናል እዚህ ጋር ማከል ትችላለህ)
 CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@tech_zone_ya"]
