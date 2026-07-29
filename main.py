@@ -18,7 +18,7 @@ MIN_WITHDRAW = 10.00
 DB_FILE = "users_db.json"
 
 # በ Render ላይ የሚሰጠውን Domain አድራሻ እዚህ ጋር ያስገቡ (ለምሳሌ፦ https://my-bot.onrender.com)
-SERVER_URL = "https://my-telegram-bot-xn5t.onrender.com
+SERVER_URL = "https://my-telegram-bot-xn5t.onrender.com"
 # ---------------------
 
 bot = telebot.TeleBot(BOT_TOKEN)
