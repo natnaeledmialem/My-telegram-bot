@@ -14,8 +14,8 @@ CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@tech_zone_ya"]
 PAYOUT_CHANNEL = "@proof_1621"  # የክፍያ ማረጋገጫ የሚለቀቅበት ቻናል
 
 ADMIN_ID = 8465808385           # የርስዎ የቴሌግራም ID
-REFERRAL_BONUS = 2.00 
-MIN_WITHDRAW = 20.00  
+REFERRAL_BONUS = 1.00 
+MIN_WITHDRAW = 10.00  
 DB_FILE = "users_db.json"
 # ---------------------
 
