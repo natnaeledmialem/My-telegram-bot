@@ -6,10 +6,18 @@ import telebot
 from telebot import types
 from flask import Flask, request, redirect
 
-# --- ማስተካከያ ቦታዎች ---
-BOT_TOKEN = "8809457101:AAERPSfuFNe9lAstqaZMlNRp1vVEvnHiLC0"  # የቦትህ ቶክን
-
+# --- Configs & Settings ---
+BOT_TOKEN = "8809457101:AAERPSfuFNe9lAstqaZMlNRp1vVEvnHiLC0"  # BotFather ላይ የወሰድከውን Token አስገባ
+ADMIN_ID = 7435977089             # የራስህ Telegram ID
+REFERRAL_BONUS = 3.00
+MIN_WITHDRAW = 20.00
+DB_FILE = "users_db.json"
 CHANNELS_FILE = "channels_db.json"
+SERVER_URL = "https://my-telegram-bot-xn5t.onrender.com"  # የ Render URL ህ
+
+bot = telebot.TeleBot(BOT_TOKEN)
+
+# --- 1. Database System for Channels & Users ---
 
 def load_channels():
     if os.path.exists(CHANNELS_FILE):
@@ -18,7 +26,6 @@ def load_channels():
                 return json.load(f)
         except Exception as e:
             print(f"Channels ማነብ አልተቻለም፦ {e}")
-    # ፋይሉ ከሌለ በውስጡ ያሉትን የመጀመሪያ ቻናሎች መነሻ ያደርጋል
     default_channels = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@Marvel5"]
     save_channels(default_channels)
     return default_channels
@@ -32,18 +39,6 @@ def save_channels(channels_list):
 
 channels_db = load_channels()
 
-
-ADMIN_ID = 7435977089           
-REFERRAL_BONUS = 3.00 
-MIN_WITHDRAW = 20.00  
-DB_FILE = "users_db.json"
-
-# በ Render ላይ የሚሰጠውን Domain አድራሻ እዚህ ጋር ያስገቡ (ለምሳሌ፦ https://my-bot.onrender.com)
-SERVER_URL = "https://my-telegram-bot-xn5t.onrender.com"
-# ---------------------
-
-bot = telebot.TeleBot(BOT_TOKEN)
-
 def load_db():
     if os.path.exists(DB_FILE):
         try:
@@ -51,7 +46,7 @@ def load_db():
                 data = json.load(f)
                 return {int(k): v for k, v in data.items()}
         except Exception as e:
-            print(f"DB ማንበብ አልተቻለም፦ {e}")
+            print(f"DB ማነብ አልተቻለም፦ {e}")
             return {}
     return {}
 
@@ -64,47 +59,45 @@ def save_db(db):
 
 users_db = load_db()
 
-# IP Address በመመዝገብ Multi-Account መከላከል
 def is_ip_registered(user_ip, current_user_id):
     for uid, udata in users_db.items():
         if udata.get('ip') == user_ip and uid != current_user_id:
             return True
     return False
 
+# --- 2. Web Server (Flask & IP Verification) ---
 app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Bot is alive and running!"
 
-# IP Address መያዣ መስመር (Endpoint)
 @app.route('/verify/<int:user_id>')
 def verify_ip(user_id):
-    # Cloudflare/Render IP ለማግኘት
     user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     if user_ip and ',' in user_ip:
         user_ip = user_ip.split(',')[0].strip()
 
     if user_id in users_db:
-        # IP አድራሻው ቀደም ሲል ሌላ ሰው ተጠቅሞበት እንደሆነ ማረጋገጥ
         if is_ip_registered(user_ip, user_id):
-            return "<h3>❌ ይቅርታ! በዚህ ስልክ/ኢንተርኔት (IP Address) ሌላ አካውንት ተከፍቷል። በስልክዎ ከአንድ በላይ አካውንት መጠቀም አይችሉም!</h3>", 403
-        
+            return "❌ ስህተት፦ ይህ IP Address ሌላ አካውንት ላይ ተመዝግቧል!"
+
         users_db[user_id]['ip'] = user_ip
         save_db(users_db)
-        
-        # የቦቱን ውይይት ለመክፈት አቅጣጫ ማስቀየር
+
         bot_info = bot.get_me()
         return redirect(f"https://t.me/{bot_info.username}")
-    
+
     return "ተጠቃሚው አልተገኘም!", 404
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
 
+# --- 3. Force Join Logic ---
+
 def check_status(user_id):
-    for channel in channels_db:  # <-- በ channels_db ተካው
+    for channel in channels_db:
         try:
             member = bot.get_chat_member(channel, user_id)
             if member.status not in ["member", "administrator", "creator"]:
@@ -114,10 +107,9 @@ def check_status(user_id):
             return False
     return True
 
-
 def get_not_joined_channels(user_id):
     not_joined = []
-    for channel in channels_db:  # <-- በ channels_db ተካው
+    for channel in channels_db:
         try:
             member = bot.get_chat_member(channel, user_id)
             if member.status not in ["member", "administrator", "creator"]:
@@ -125,7 +117,6 @@ def get_not_joined_channels(user_id):
         except Exception:
             not_joined.append(channel)
     return not_joined
-
 
 def main_keyboard():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
@@ -136,14 +127,66 @@ def main_keyboard():
     markup.add(btn3)
     return markup
 
+# --- 4. Admin Commands (በቴሌግራም መቆጣጠሪያ) ---
+
+@bot.message_handler(commands=['addchannel'])
+def add_channel_cmd(message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    try:
+        new_ch = message.text.split()[1].strip()
+        if not new_ch.startswith("@"):
+            bot.reply_to(message, "⚠️ እባክህ የቻናሉን username ከ `@` ጋር ጻፍ! (ምሳሌ፦ `/addchannel @mychannel`)")
+            return
+        if new_ch not in channels_db:
+            channels_db.append(new_ch)
+            save_channels(channels_db)
+            bot.reply_to(message, f"✅ ቻናል **{new_ch}** በስኬት ተጨምሯል!")
+        else:
+            bot.reply_to(message, f"⚠️ ቻናል **{new_ch}** አስቀድሞ አለ!")
+    except IndexError:
+        bot.reply_to(message, "⚠️ ምሳሌ፦ `/addchannel @mychannel`")
+
+@bot.message_handler(commands=['delchannel'])
+def del_channel_cmd(message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    try:
+        rem_ch = message.text.split()[1].strip()
+        if rem_ch in channels_db:
+            channels_db.remove(rem_ch)
+            save_channels(channels_db)
+            bot.reply_to(message, f"❌ ቻናል **{rem_ch}** ተሰርዟል!")
+        else:
+            bot.reply_to(message, f"⚠️ ቻናል **{rem_ch}** አልተገኘም!")
+    except IndexError:
+        bot.reply_to(message, "⚠️ ምሳሌ፦ `/delchannel @mychannel`")
+
+@bot.message_handler(commands=['listchannels'])
+def list_channels_cmd(message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    if not channels_db:
+        bot.reply_to(message, "እስካሁን ምንም የተመዘገበ ቻናል የለም።")
+        return
+    text = "📋 **የተመዘገቡ Force Join ቻናሎች፦**\n\n"
+    for ch in channels_db:
+        text += f"• {ch}\n"
+    bot.reply_to(message, text, parse_mode="Markdown")
+
+# --- 5. User Handlers ---
+
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.from_user.id
     username = message.from_user.username or "ተጠቃሚ"
-    
-    # አዲስ ተጠቃሚ ሲሆን ፕሮፋይል መክፈት
+
     if user_id not in users_db:
-        users_db[user_id] = {'balance': 0.0, 'referred_by': None, 'referred_count': 0, 'ip': None}
+        users_db[user_id] = {
+            'balance': 0.0,
+            'referred_by': None,
+            'referred_count': 0
+        }
         args = message.text.split()
         if len(args) > 1:
             try:
@@ -154,7 +197,7 @@ def start(message):
                 pass
         save_db(users_db)
 
-    # ተጠቃሚው IP Verification ካላደረገ አረጋግጥ የሚል ሊንክ መስጠት
+    # IP Verification
     if not users_db[user_id].get('ip'):
         verify_url = f"{SERVER_URL}/verify/{user_id}"
         markup = types.InlineKeyboardMarkup()
@@ -167,158 +210,77 @@ def start(message):
         )
         return
 
-    # Force Join አዝራሮችን (Buttons) የምትሰራበት ቦታ ላይ፡
+    # Check Force Join
+    not_joined = get_not_joined_channels(user_id)
+    if not_joined:
+        markup = types.InlineKeyboardMarkup()
+        for idx, ch in enumerate(not_joined, 1):
+            clean_username = ch.replace("@", "").strip()
+            ch_url = f"https://t.me/{clean_username}"
+            btn = types.InlineKeyboardButton(text=f"📢 ቻናል {idx} ተቀላቀል", url=ch_url)
+            markup.add(btn)
 
-markup = types.InlineKeyboardMarkup()
-not_joined = get_not_joined_channels(user_id)
+        check_btn = types.InlineKeyboardButton(text="✅ ተቀላቅያለሁ (Check)", callback_data="check_join")
+        markup.add(check_btn)
 
-for idx, ch in enumerate(not_joined, 1):
-    # @ ምልክቷን አጥፍተህ ትክክለኛ የቴሌግራም link መፍጠር
-    clean_username = ch.replace("@", "").strip()
-    ch_url = f"https://t.me/{clean_username}"
+        bot.send_message(
+            user_id,
+            f"👋 ሰላም {username}!\n\nቦቱን ለመጠቀም መጀመሪያ ሁሉንም ቻናሎቻችንን መቀላቀል አለብዎት፦",
+            reply_markup=markup
+        )
+        return
 
-    # እያንዳንዱን ቻናል የሚከፍት button
-    btn = types.InlineKeyboardButton(
-        text=f"📢 ቻናል {idx} ተቀላቀል", url=ch_url
-    )
-    markup.add(btn)
-
-# የቼክ ማድረጊያ button
-check_btn = types.InlineKeyboardButton(
-    text="✅ ተቀላቅያለሁ (Check)", callback_data="check_join"
-)
-markup.add(check_btn)
-
-# መልእክቱን ለመላክ (በ start ወይም በ check_callback ውስጥ እንዳለው)
-bot.send_message(
-    user_id,
-    f"👋 ሰላም {username}!\n\nቦቱን ለመጠቀም መጀመሪያ ሁሉንም ቻናሎቻችንን መቀላቀል አለብዎት፦",
-    reply_markup=markup,
-)
-
-
-    # የሪፈራል ቦነስ መስጠት
-    ref_id = users_db[user_id]['referred_by']
-    if ref_id and users_db[user_id]['referred_count'] == 0:
-        if ref_id in users_db:
-            users_db[ref_id]['balance'] += REFERRAL_BONUS
-            users_db[ref_id]['referred_count'] += 1
-            users_db[user_id]['referred_count'] = -1 
-            save_db(users_db)
-            try:
-                bot.send_message(ref_id, f"🎉 <b>አዲስ ሰው ጋብዘዋል!</b>\n<b>+{REFERRAL_BONUS} ብር</b> ወደ አካውንትዎ ተጨምሯል።", parse_mode="HTML")
-            except Exception:
-                pass
-
-    bot.send_message(
-        user_id, 
-        "✨ <b>እንኳን በደህና መጡ!</b>\n\nከታች ያሉትን ቁልፎች በመጠቀም ሰዎችን ይጋብዙ እና ያትርፉ።", 
-        reply_markup=main_keyboard(),
-        parse_mode="HTML"
-    )
+    bot.send_message(user_id, f"👋 እንኳን ደህና መጡ {username}!", reply_markup=main_keyboard())
 
 @bot.callback_query_handler(func=lambda call: call.data == "check_join")
 def check_callback(call):
     user_id = call.from_user.id
-    
     if check_status(user_id):
-        bot.answer_callback_query(call.id, "✅ በደንብ ተቀላቅለዋል!", show_alert=False)
-        try:
-            bot.delete_message(call.message.chat.id, call.message.message_id)
-        except Exception:
-            pass
-        start(call.message)
-    else:
-        bot.answer_callback_query(call.id, "❌ አሁንም ሁሉንም ቻናሎች አልተቀላቀሉም!", show_alert=True)
+        # የሪፌራል ቦነስ ለመስጠት
+        ref_id = users_db[user_id].get('referred_by')
+        if ref_id and ref_id in users_db and not users_db[user_id].get('bonus_given'):
+            users_db[ref_id]['balance'] += REFERRAL_BONUS
+            users_db[ref_id]['referred_count'] += 1
+            users_db[user_id]['bonus_given'] = True
+            save_db(users_db)
+            try:
+                bot.send_message(ref_id, f"🎉 አዲስ ሰው ጋብዘዋል! +{REFERRAL_BONUS} ብር ተጨምሮልዎታል።")
+            except Exception:
+                pass
 
-@bot.message_handler(func=lambda message: True)
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        bot.send_message(user_id, "✅ በስኬት ተረጋግጧል! አሁን ቦቱን መጠቀም ይችላሉ።", reply_markup=main_keyboard())
+    else:
+        bot.answer_callback_query(call.id, "⚠️ እባክዎን ሁሉንም ቻናሎች ይቀላቀሉ!", show_alert=True)
+
+@bot.message_handler(func=lambda m: True)
 def handle_buttons(message):
     user_id = message.from_user.id
-    
-    if user_id not in users_db:
-        bot.send_message(user_id, "<b>እባክዎ መጀመሪያ /start ይበሉ</b>", parse_mode="HTML")
-        return
-
-    if not users_db[user_id].get('ip'):
-        start(message)
-        return
 
     if not check_status(user_id):
         start(message)
         return
 
     if message.text == "💰 አካውንቴ (Balance)":
-        bal = users_db[user_id]['balance']
-        count = max(0, users_db[user_id]['referred_count'])
-        text = f"💳 <b>የአካውንትዎ መረጃ</b>\n\n💵 <b>ጠቅላላ ቀሪ ሂሳብ፦</b> <b>{bal:.2f} ብር</b>\n👥 <b>የጋበዟቸው ሰዎች ቁጥር፦</b> <b>{count} ሰው</b>"
-        bot.send_message(user_id, text, parse_mode="HTML")
+        bal = users_db[user_id].get('balance', 0.0)
+        refs = users_db[user_id].get('referred_count', 0)
+        bot.reply_to(message, f"💳 **የእርስዎ አካውንት መረጃ፦**\n\n• ቀሪ ሂሳብ፦ `{bal:.2f}` ብር\n• የጋበዟቸው ሰዎች፦ `{refs}`", parse_mode="Markdown")
 
     elif message.text == "🔗 መጋበዣ ሊንክ (Referral)":
-        try:
-            bot_info = bot.get_me()
-            ref_link = f"https://t.me/{bot_info.username}?start={user_id}"
-            text = f"👥 <b>ሰዎችን ይጋብዙ!</b>\n\nየእርስዎ መጋበዣ ሊንክ ይህ ነው👇\n<code>{ref_link}</code>\n\n🎁 አንድ ሰው በሊንክዎ ሲገባ <b>{REFERRAL_BONUS} ብር</b> ያገኛሉ።"
-            bot.send_message(user_id, text, parse_mode="HTML")
-        except Exception:
-            bot.send_message(user_id, "⚠️ <b>ችግር አጋጥሟል፣ እባክዎ ትንሽ ቆይተው ድጋሚ ይሞክሩ።</b>", parse_mode="HTML")
+        bot_info = bot.get_me()
+        ref_link = f"https://t.me/{bot_info.username}?start={user_id}"
+        bot.reply_to(message, f"🔗 **የእርስዎ መጋበዣ ሊንክ፦**\n\n`{ref_link}`\n\nለእያንዳንዱ ሰው ሰውን ሲጋብዙ **{REFERRAL_BONUS:.2f}** ብር ያገኛሉ!", parse_mode="Markdown")
 
     elif message.text == "💵 ብር ማውጫ (Withdraw)":
-        bal = users_db[user_id]['balance']
+        bal = users_db[user_id].get('balance', 0.0)
         if bal < MIN_WITHDRAW:
-            bot.send_message(user_id, f"❌ <b>ይቅርታ፣ ብር ለማውጣት ቢያንስ {MIN_WITHDRAW} ብር ሊኖርዎት ይገባል።</b>\n\n💵 <b>የእርስዎ ሂሳብ፦</b> <b>{bal:.2f} ብrm</b>", parse_mode="HTML")
+            bot.reply_to(message, f"⚠️ ማውጣት የሚችሉት አነስተኛው የብር መጠን **{MIN_WITHDRAW:.2f}** ብር ነው! የእርስዎ ሂሳብ `{bal:.2f}` ብር ነው።")
         else:
-            msg = bot.send_message(user_id, "🔄 <b>እባክዎ ብሩ የሚገባበትን ስም እና ስልክ ቁጥር (ወይም የባንክ አካውንት) ይጻፉልን፦</b>", parse_mode="HTML")
-            bot.register_next_step_handler(msg, process_withdraw)
-
-def process_withdraw(message):
-    user_id = message.from_user.id
-    details = message.text
-    bal = users_db[user_id]['balance']
-    username = message.from_user.username or "የሌለው"
-
-    users_db[user_id]['balance'] = 0.0
-    save_db(users_db)
-
-    admin_msg = (f"🚨 <b>አዲስ የማውጫ ጥያቄ ደርሷል!</b>\n\n"
-                 f"👤 <b>ተጠቃሚ ID፦</b> <code>{user_id}</code>\n"
-                 f"🏷 <b>ዩዘርኔም፦</b> @{username}\n"
-                 f"💰 <b>የሚወጣው ብር፦</b> <b>{bal:.2f} ብር</b>\n"
-                 f"📌 <b>ዝርዝር መረጃ፦</b> <b>{details}</b>")
-    
-    try:
-        bot.send_message(ADMIN_ID, admin_msg, parse_mode="HTML")
-    except Exception as e:
-        print(f"ለአድሚን መረጃ መላክ አልተቻለም: {e}")
-
-    proof_msg = (f"💸 <b>አዲስ የክፍያ ጥያቄ (Withdrawal Request)</b>\n\n"
-                 f"👤 <b>ተጠቃሚ፦</b> @{username}\n"
-                 f"💰 <b>የብር መጠን፦</b> <b>{bal:.2f} ብር</b>\n"
-                 f"📌 <b>STATUS፦</b> ⏳ <b>በመጠበቅ ላይ (Pending)</b>")
-    
-    try:
-        bot.send_message(PAYOUT_CHANNEL, proof_msg, parse_mode="HTML")
-    except Exception as e:
-        print(f"ወደ Proof ቻናል ፖስት ማድረግ አልተቻለም: {e}")
-
-    bot.send_message(user_id, "✅ <b>ጥያቄዎ በተሳካ ሁኔታ ለባለቤቱ ተልኳል! በአጭር ጊዜ ውስጥ ይላክልዎታል።</b>", parse_mode="HTML")
+            bot.reply_to(message, "✅ የብር ማውጫ ጥያቄዎን ለማስተናገድ እባክዎ የአድሚን አካውንቱን ያነጋግሩ።")
 
 def run_bot():
-    print("ቦቱ በ Render ላይ በስኬት መሥራት ጀምሯል...")
-    try:
-        bot.delete_webhook(drop_pending_updates=True)
-    except Exception as e:
-        print(f"Webhook ማጽዳት አልተቻለም፦ {e}")
-        
-    while True:
-        try:
-            bot.infinity_polling(skip_pending=True, timeout=60, long_polling_timeout=60)
-        except Exception as e:
-            print(f"የግንኙነት ችግር አጋጥሟል፡ {e}። ከ 5 ሰከንድ በኋላ ድጋሚ ይሞክራል...")
-            time.sleep(5)
+    bot.infinity_polling()
 
 if __name__ == "__main__":
-    server_thread = Thread(target=run_flask)
-    server_thread.daemon = True
-    server_thread.start()
-    
+    Thread(target=run_flask).start()
     run_bot()
