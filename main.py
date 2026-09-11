@@ -167,23 +167,35 @@ def start(message):
         )
         return
 
-    not_joined = get_not_joined_channels(user_id)
-    
-    if not_joined:
-        markup = types.InlineKeyboardMarkup(row_width=1)
-        for i, ch in enumerate(not_joined, 1):
-            url_link = f"https://t.me/{ch.replace('@', '')}"
-            markup.add(types.InlineKeyboardButton(f"📢 ቻናል {i}ን ተቀላቀል", url=url_link))
-        
-        markup.add(types.InlineKeyboardButton("✅ ተቀላቅያለሁ (Check)", callback_data="check_join"))
-        
-        bot.send_message(
-            user_id, 
-            f"👋 <b>ሰላም {username}!</b>\n\nቦቱን ለመጠቀም መጀመሪያ ሁሉንም ቻናሎቻችንን መቀላቀል አለብዎት።👇", 
-            reply_markup=markup,
-            parse_mode="HTML"
-        )
-        return
+    # Force Join አዝራሮችን (Buttons) የምትሰራበት ቦታ ላይ፡
+
+markup = types.InlineKeyboardMarkup()
+not_joined = get_not_joined_channels(user_id)
+
+for idx, ch in enumerate(not_joined, 1):
+    # @ ምልክቷን አጥፍተህ ትክክለኛ የቴሌግራም link መፍጠር
+    clean_username = ch.replace("@", "").strip()
+    ch_url = f"https://t.me/{clean_username}"
+
+    # እያንዳንዱን ቻናል የሚከፍት button
+    btn = types.InlineKeyboardButton(
+        text=f"📢 ቻናል {idx} ተቀላቀል", url=ch_url
+    )
+    markup.add(btn)
+
+# የቼክ ማድረጊያ button
+check_btn = types.InlineKeyboardButton(
+    text="✅ ተቀላቅያለሁ (Check)", callback_data="check_join"
+)
+markup.add(check_btn)
+
+# መልእክቱን ለመላክ (በ start ወይም በ check_callback ውስጥ እንዳለው)
+bot.send_message(
+    user_id,
+    f"👋 ሰላም {username}!\n\nቦቱን ለመጠቀም መጀመሪያ ሁሉንም ቻናሎቻችንን መቀላቀል አለብዎት፦",
+    reply_markup=markup,
+)
+
 
     # የሪፈራል ቦነስ መስጠት
     ref_id = users_db[user_id]['referred_by']
