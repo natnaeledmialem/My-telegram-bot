@@ -9,7 +9,8 @@ from flask import Flask, request, redirect
 # --- Configs & Settings ---
 BOT_TOKEN = "8809457101:AAERPSfuFNe9lAstqaZMlNRp1vVEvnHiLC0"  # BotFather ላይ የወሰድከውን Token አስገባ
 ADMIN_ID = 7435977089             # የራስህ Telegram ID
-REFERRAL_BONUS = 3.40
+PROOF_CHANNEL = "@proof_1621"     # የ Proof ቻናልህ Username
+REFERRAL_BONUS = 3.00
 MIN_WITHDRAW = 35.00
 DB_FILE = "users_db.json"
 CHANNELS_FILE = "channels_db.json"
@@ -25,7 +26,7 @@ def load_channels():
                 return json.load(f)
         except Exception as e:
             print(f"Channels ማነብ አልተቻለም፦ {e}")
-    default_channels = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@Marvel5423"]
+    default_channels = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@Marvel5"]
     save_channels(default_channels)
     return default_channels
 
@@ -218,6 +219,8 @@ def check_callback(call):
 @bot.message_handler(func=lambda m: True)
 def handle_buttons(message):
     user_id = message.from_user.id
+    username = message.from_user.username or "የሌለው"
+    first_name = message.from_user.first_name or "ተጠቃሚ"
 
     if not check_status(user_id):
         start(message)
@@ -238,7 +241,34 @@ def handle_buttons(message):
         if bal < MIN_WITHDRAW:
             bot.reply_to(message, f"⚠️ <b>ማውጣት የሚችሉት አነስተኛው የብር መጠን {MIN_WITHDRAW:.2f} ብር ነው! የእርስዎ ሂሳብ {bal:.2f} ብር ነው።</b>", parse_mode="HTML")
         else:
-            bot.reply_to(message, "✅ <b>የብር ማውጫ ጥያቄዎን ለማስተናገድ እባክዎ የአድሚን አካውንቱን ያነጋግሩ።</b>", parse_mode="HTML")
+            # 1. ለተጠቃሚው ማረጋገጫ መስጠት
+            bot.reply_to(message, f"✅ <b>የብር ማውጣት ጥያቄዎ በስኬት ቀርቧል! በአጭር ጊዜ ውስጥ ይከፈልዎታል።</b>", parse_mode="HTML")
+            
+            # 2. ለአድሚኑ (ላንተ) ሙሉ መረጃ መላክ
+            admin_msg = (
+                f"🚨 <b>አዲስ የብር ማውጣት ጥያቄ ቀርቧል!</b>\n\n"
+                f"👤 <b>ስም፦</b> {first_name}\n"
+                f"🆔 <b>User ID፦</b> <code>{user_id}</code>\n"
+                f"🔗 <b>Username፦</b> @{username}\n"
+                f"💵 <b>የሚወጣው ብር፦</b> <b>{bal:.2f} ETB</b>\n"
+            )
+            try:
+                bot.send_message(ADMIN_ID, admin_msg, parse_mode="HTML")
+            except Exception as e:
+                print(f"ለአድሚን መላክ አልተቻለም፦ {e}")
+
+            # 3. ወደ Proof ቻናል መላክ
+            proof_msg = (
+                f"💸 <b>አዲስ የብር ማውጣት ጥያቄ!</b>\n\n"
+                f"👤 <b>ተጠቃሚ፦</b> {first_name}\n"
+                f"💵 <b>የተጠየቀው መጠን፦</b> <b>{bal:.2f} ETB</b>\n"
+                f"✅ <b>ሁኔታ፦</b> በሂደት ላይ (Pending)\n\n"
+                f"ቀጣዩ እርስዎ ይሁኑ! 🎯"
+            )
+            try:
+                bot.send_message(PROOF_CHANNEL, proof_msg, parse_mode="HTML")
+            except Exception as e:
+                print(f"ወደ Proof ቻናል መላክ አልተቻለም፦ {e}")
 
 def run_bot():
     bot.infinity_polling()
