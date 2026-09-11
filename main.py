@@ -7,7 +7,7 @@ from telebot import types
 from flask import Flask, request, redirect
 
 # --- ማስተካከያ ቦታዎች ---
-BOT_TOKEN = "8891177020:AAHemQBAUImmB_WYce_uAyDtSAKy5DYYVy0"  # የቦትህ ቶክን
+BOT_TOKEN = "8809457101:AAERPSfuFNe9lAstqaZMlNRp1vVEvnHiLC0"  # የቦትህ ቶክን
 
 CHANNELS_FILE = "channels_db.json"
 
