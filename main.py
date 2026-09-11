@@ -34,7 +34,7 @@ channels_db = load_channels()
 
 PAYOUT_CHANNEL = "@proof_1621"
 
-ADMIN_ID = 8465808385           
+ADMIN_ID = 7435977089           
 REFERRAL_BONUS = 3.00 
 MIN_WITHDRAW = 20.00  
 DB_FILE = "users_db.json"
