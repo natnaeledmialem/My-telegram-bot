@@ -25,7 +25,7 @@ def load_channels():
                 return json.load(f)
         except Exception as e:
             print(f"Channels ማነብ አልተቻለም፦ {e}")
-    default_channels = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@Marvel5"]
+    default_channels = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@Marve5423"]
     save_channels(default_channels)
     return default_channels
 
