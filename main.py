@@ -9,12 +9,12 @@ from flask import Flask, request, redirect
 # --- ማስተካከያ ቦታዎች ---
 BOT_TOKEN = "8891177020:AAHemQBAUImmB_WYce_uAyDtSAKy5DYYVy0"  # የቦትህ ቶክን
 
-CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@tech_zone_ya"]
+CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621"]
 PAYOUT_CHANNEL = "@proof_1621"
 
 ADMIN_ID = 8465808385           
-REFERRAL_BONUS = 1.00 
-MIN_WITHDRAW = 10.00  
+REFERRAL_BONUS = 3.00 
+MIN_WITHDRAW = 20.00  
 DB_FILE = "users_db.json"
 
 # በ Render ላይ የሚሰጠውን Domain አድራሻ እዚህ ጋር ያስገቡ (ለምሳሌ፦ https://my-bot.onrender.com)
