@@ -32,7 +32,6 @@ def save_channels(channels_list):
 
 channels_db = load_channels()
 
-PAYOUT_CHANNEL = "@proof_1621"
 
 ADMIN_ID = 7435977089           
 REFERRAL_BONUS = 3.00 
