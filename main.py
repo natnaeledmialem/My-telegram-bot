@@ -10,7 +10,7 @@ from flask import Flask, request, redirect
 BOT_TOKEN = "8809457101:AAERPSfuFNe9lAstqaZMlNRp1vVEvnHiLC0"  # BotFather ላይ የወሰድከውን Token አስገባ
 ADMIN_ID = 7435977089             # የራስህ Telegram ID
 REFERRAL_BONUS = 3.40
-MIN_WITHDRAW = 20.00
+MIN_WITHDRAW = 35.00
 DB_FILE = "users_db.json"
 CHANNELS_FILE = "channels_db.json"
 
