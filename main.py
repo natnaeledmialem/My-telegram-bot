@@ -74,7 +74,7 @@ def home():
 
 @app.route('/verify/<int:user_id>')
 def verify_ip(user_id):
-        bot_info = bot.get_me()
+    bot_info = bot.get_me()
     return redirect(f"https://t.me/{bot_info.username}")
 
 def run_flask():
