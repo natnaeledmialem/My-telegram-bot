@@ -74,21 +74,8 @@ def home():
 
 @app.route('/verify/<int:user_id>')
 def verify_ip(user_id):
-    user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if user_ip and ',' in user_ip:
-        user_ip = user_ip.split(',')[0].strip()
-
-    if user_id in users_db:
-        if is_ip_registered(user_ip, user_id):
-            return "❌ ስህተት፦ ይህ IP Address ሌላ አካውንት ላይ ተመዝግቧል!"
-
-        users_db[user_id]['ip'] = user_ip
-        save_db(users_db)
-
         bot_info = bot.get_me()
-        return redirect(f"https://t.me/{bot_info.username}")
-
-    return "ተጠቃሚው አልተገኘም!", 404
+    return redirect(f"https://t.me/{bot_info.username}")
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
