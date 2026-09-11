@@ -9,7 +9,7 @@ from flask import Flask, request, redirect
 # --- ማስተካከያ ቦታዎች ---
 BOT_TOKEN = "8891177020:AAHemQBAUImmB_WYce_uAyDtSAKy5DYYVy0"  # የቦትህ ቶክን
 
-CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621"]
+CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@Marvel5423"]
 PAYOUT_CHANNEL = "@proof_1621"
 
 ADMIN_ID = 8465808385           
