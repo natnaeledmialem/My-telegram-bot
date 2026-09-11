@@ -9,7 +9,29 @@ from flask import Flask, request, redirect
 # --- ማስተካከያ ቦታዎች ---
 BOT_TOKEN = "8891177020:AAHemQBAUImmB_WYce_uAyDtSAKy5DYYVy0"  # የቦትህ ቶክን
 
-CHANNELS = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@Marvel5423"]
+CHANNELS_FILE = "channels_db.json"
+
+def load_channels():
+    if os.path.exists(CHANNELS_FILE):
+        try:
+            with open(CHANNELS_FILE, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Channels ማነብ አልተቻለም፦ {e}")
+    # ፋይሉ ከሌለ በውስጡ ያሉትን የመጀመሪያ ቻናሎች መነሻ ያደርጋል
+    default_channels = ["@skmnlm", "@ffnnmmkk", "@ttrffnm", "@proof_1621", "@Marvel5"]
+    save_channels(default_channels)
+    return default_channels
+
+def save_channels(channels_list):
+    try:
+        with open(CHANNELS_FILE, "w") as f:
+            json.dump(channels_list, f, indent=4)
+    except Exception as e:
+        print(f"Channels ማስቀመጥ አልተቻለም፦ {e}")
+
+channels_db = load_channels()
+
 PAYOUT_CHANNEL = "@proof_1621"
 
 ADMIN_ID = 8465808385           
@@ -83,26 +105,28 @@ def run_flask():
     app.run(host='0.0.0.0', port=port)
 
 def check_status(user_id):
-    for channel in CHANNELS:
+    for channel in channels_db:  # <-- በ channels_db ተካው
         try:
             member = bot.get_chat_member(channel, user_id)
-            if member.status not in ['member', 'administrator', 'creator']:
+            if member.status not in ["member", "administrator", "creator"]:
                 return False
         except Exception as e:
-            print(f"ቻናል ማረጋገጥ አልተቻለም ({channel}): {e}")
+            print(f"የቻናል ማረጋገጥ ስህተት ({channel}): {e}")
             return False
     return True
 
+
 def get_not_joined_channels(user_id):
     not_joined = []
-    for channel in CHANNELS:
+    for channel in channels_db:  # <-- በ channels_db ተካው
         try:
             member = bot.get_chat_member(channel, user_id)
-            if member.status not in ['member', 'administrator', 'creator']:
+            if member.status not in ["member", "administrator", "creator"]:
                 not_joined.append(channel)
         except Exception:
             not_joined.append(channel)
     return not_joined
+
 
 def main_keyboard():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
