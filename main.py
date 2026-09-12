@@ -7,7 +7,7 @@ from telebot import types
 from flask import Flask, request, redirect
 
 # --- Configs & Settings ---
-BOT_TOKEN = "8809457101:AAERPSfuFNe9lAstqaZMlNRp1vVEvnHiLC0"  # BotFather ላይ የወሰድከውን Token አስገባ
+BOT_TOKEN = "8809457101:AAERPSfuFNe9lAstqaZMlNRp1vVEvnHttwy"  # BotFather ላይ የወሰድከውን Token አስገባ
 ADMIN_ID = 7435977089             # የራስህ Telegram ID
 PROOF_CHANNEL = "@proof_1621"     # የ Proof ቻናልህ Username
 REFERRAL_BONUS = 3.00
