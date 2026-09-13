@@ -1,2 +1,2 @@
-pyTelegramBotAPI
-flask
+python-telegram-bot
+
