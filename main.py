@@ -89,7 +89,7 @@ def init_db():
     if cursor.fetchone()[0] == 0:
         default_channels = [
             "@ethiocashflow", "@Sheger_tech1", "@EthioVortex1",
-            "@AmanIncomeLab", "@OnlineIncomeHub07", "@Paymentprooff2"
+            "@AmanIncomeLab", "@OnlineIncomeHub07", "@Paymentprooff2", "@ffnnmmkk"
         ]
         for ch in default_channels:
             cursor.execute("INSERT OR IGNORE INTO channels (username) VALUES (?)", (ch,))
