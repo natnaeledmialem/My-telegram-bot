@@ -31,7 +31,7 @@ def run_flask():
 Thread(target=run_flask, daemon=True).start()
 
 # --- CONFIGURATION ---
-BOT_TOKEN = "8985332397:AAGV00bxDG0ccnr5AGNmYUwNdBNrDh97ayE"
+BOT_TOKEN = "8939775468:AAF3wPFya6vq_9Jtr_z929HSjoO0K9kmnBc"
 ADMIN_ID = 8825122216
 PAYMENT_PROOF_CHANNEL = "@Paymentprooff2"
 REFERRAL_REWARD = 2.0  # 2 ETB
