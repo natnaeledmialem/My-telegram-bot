@@ -5,21 +5,23 @@ import telebot
 from telebot import types
 
 # --- ማስተካከያ ቦታዎች ---
-BOT_TOKEN = "8884008636:AAHYs5SV-H_HBMSc02LTsZAUP2iz8r12CSw"
+BOT_TOKEN = "8884008636:AAG9Hu0WUdqvXH7zs6O6wV1dJ0Gva2fGG-Q"
 CHANNELS = ["@et5_m"]
-INITIAL_ADMIN = 7435977089  # ዋናው የመጀመሪያው አድሚን
-ADMINS = [INITIAL_ADMIN]
-
+PAYOUT_CHANNEL = "@et5_m"  # የPayout ቻናል (እዚህ ጋር የርስዎን ቻናል ያስገቡ)
+ADMIN_ID = 7435977089
+ADMIN_USERNAME = "@Smadmin_16"  # የርሶ ዩዘርናም (ለ Promotion)
 REFERRAL_BONUS = 3.00
 MIN_WITHDRAW = 30.00
 # ---------------------
 
 bot = telebot.TeleBot(BOT_TOKEN)
+
 users_db = {}
 
 
 def check_status(user_id):
-  for channel in CHANNELS:
+  all_channels = CHANNELS + [PAYOUT_CHANNEL] if PAYOUT_CHANNEL else CHANNELS
+  for channel in all_channels:
     try:
       member = bot.get_chat_member(channel, user_id)
       if member.status not in ["member", "administrator", "creator"]:
@@ -31,7 +33,8 @@ def check_status(user_id):
 
 def get_not_joined_channels(user_id):
   not_joined = []
-  for channel in CHANNELS:
+  all_channels = CHANNELS + [PAYOUT_CHANNEL] if PAYOUT_CHANNEL else CHANNELS
+  for channel in all_channels:
     try:
       member = bot.get_chat_member(channel, user_id)
       if member.status not in ["member", "administrator", "creator"]:
@@ -42,15 +45,25 @@ def get_not_joined_channels(user_id):
 
 
 def main_keyboard():
-  markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-  btn1 = types.KeyboardButton("🟢 Balance")
-  btn2 = types.KeyboardButton("🟢 Referral")
-  btn3 = types.KeyboardButton("🟩 Withdraw")
-  btn4 = types.KeyboardButton("🟩 Wallet")
-  btn5 = types.KeyboardButton("🟢 Statistics")
-  markup.add(btn1, btn2)
-  markup.add(btn3, btn4)
-  markup.add(btn5)
+  # የቁልፍ ሰሌዳ አቀማመጥ በትክክል 2,3,1 ሆኖ ተዘጋጅቷል
+  markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+  btn1 = types.KeyboardButton("💳 Balance")
+  btn2 = types.KeyboardButton("👥 Referral")
+  btn3 = types.KeyboardButton("💸 Withdraw")
+  btn4 = types.KeyboardButton("📂 Wallet")
+  btn5 = types.KeyboardButton("📊 Statistics")
+  btn6 = types.KeyboardButton("📢 Promotion")
+
+  # 1ኛ መስመር (2 ቁልፎች)
+  row1 = [btn1, btn2]
+  # 2ኛ መስመር (3 ቁልፎች)
+  row2 = [btn3, btn4, btn5]
+  # 3ኛ መስመር (1 ቁልፍ)
+  row3 = [btn6]
+
+  markup.add(*row1)
+  markup.add(*row2)
+  markup.add(*row3)
   return markup
 
 
@@ -113,9 +126,9 @@ def start(message):
         user_id,
         (
             f"<b>👋 Hello {first_name}!\n\n✨ Welcome to our earning and withdrawal"
-            " bot. እንኳን በደህና መጡ!\n\n⚠️ Please join all channels below to start"
-            " using the bot! ቻናሎቹን መቀላቀል ግዴታ ነው! Click '✅ Joined' after"
-            " joining.</b>"
+            " bot. እንኳን በደህና መጡ!\n\n⚠️ Please join all channels below (including"
+            " Payout channel) to start using the bot! ቻናሎቹን መቀላቀል ግዴታ"
+            " ነው!</b>"
         ),
         parse_mode="html",
         reply_markup=markup,
@@ -172,10 +185,9 @@ def check_callback(call):
     )
 
 
-# 👑 አድሚን ፓነል ትእዛዝ
 @bot.message_handler(commands=["admin"])
 def admin_panel(message):
-  if message.from_user.id not in ADMINS:
+  if message.from_user.id != ADMIN_ID:
     bot.reply_to(
         message, "<b>❌ This command is for admins only!</b>", parse_mode="html"
     )
@@ -189,8 +201,6 @@ def admin_panel(message):
       types.InlineKeyboardButton(
           "⚙️ Manage Channels", callback_data="manage_channels"
       ),
-      types.InlineKeyboardButton("👑 Admin Management", callback_data="admin_mgmt"),
-      types.InlineKeyboardButton("🔙 Back to Main Menu", callback_data="back_home"),
   )
 
   bot.reply_to(
@@ -198,8 +208,8 @@ def admin_panel(message):
       (
           f"<b>👑 Welcome to Admin Panel!\n\n⚙️ Current Settings:\n- Min"
           f" Withdraw: {MIN_WITHDRAW} Birr\n- Per Referral: {REFERRAL_BONUS}"
-          f" Birr\n- Total Channels: {len(CHANNELS)}\n- Total Admins:"
-          f" {len(ADMINS)}\n\nChoose an option from below 👇</b>"
+          f" Birr\n- Total Channels: {len(CHANNELS)}\n- Payout Channel:"
+          f" {PAYOUT_CHANNEL}\n\nChoose an option from below 👇</b>"
       ),
       parse_mode="html",
       reply_markup=markup,
@@ -212,7 +222,7 @@ def handle_buttons(message):
   text = message.text
 
   if text and text.startswith("/admin"):
-    if user_id not in ADMINS:
+    if user_id != ADMIN_ID:
       bot.reply_to(
           message, "<b>❌ This command is for admins only!</b>", parse_mode="html"
       )
@@ -236,7 +246,7 @@ def handle_buttons(message):
     start(message)
     return
 
-  if text == "🟢 Balance":
+  if text == "💳 Balance":
     bal = users_db[user_id]["balance"]
     count = max(0, users_db[user_id]["referred_count"])
     wallet_num = users_db[user_id]["wallet"]
@@ -250,7 +260,7 @@ def handle_buttons(message):
         parse_mode="html",
     )
 
-  elif text == "🟢 Referral":
+  elif text == "👥 Referral":
     bot_info = bot.get_me()
     ref_link = f"https://t.me/{bot_info.username}?start={user_id}"
     count = max(0, users_db[user_id]["referred_count"])
@@ -265,7 +275,7 @@ def handle_buttons(message):
         parse_mode="html",
     )
 
-  elif text == "🟩 Wallet":
+  elif text == "📂 Wallet":
     msg = bot.send_message(
         user_id,
         (
@@ -277,14 +287,14 @@ def handle_buttons(message):
     )
     bot.register_next_step_handler(msg, process_wallet_input)
 
-  elif text == "🟩 Withdraw":
+  elif text == "💸 Withdraw":
     wallet_num = users_db[user_id]["wallet"]
     if wallet_num == "Not Set":
       bot.send_message(
           user_id,
           (
               "<b>⚠️ Please set your Telebirr wallet number before"
-              " withdrawing!\n(Click '🟩 Wallet' below to set it)</b>"
+              " withdrawing!\n(Click '📂 Wallet' below to set it)</b>"
           ),
           parse_mode="html",
       )
@@ -301,33 +311,18 @@ def handle_buttons(message):
           parse_mode="html",
       )
     else:
-      users_db[user_id]["balance"] = 0.0
-      username = message.from_user.username or "No Username"
-
-      admin_msg = (
-          f"🚨 **New Withdrawal Request!**\n\n"
-          f"👤 User ID: `{user_id}`\n"
-          f"🏷 Username: @{username}\n"
-          f"💳 Telebirr Number: `{wallet_num}`\n"
-          f"💰 Amount: {bal} Birr"
-      )
-      for adm in ADMINS:
-        try:
-          bot.send_message(adm, admin_msg, parse_mode="markdown")
-        except:
-          pass
-
-      bot.send_message(
+      msg = bot.send_message(
           user_id,
           (
-              f"<b>✅ Withdrawal request submitted successfully!\n💳 Telebirr:"
-              f" {wallet_num}\n💰 Amount: {bal} Birr\n\nIt will be sent to your"
-              " account soon!</b>"
+              f"<b>💸 Enter withdrawal amount:\n\n💵 Your Balance: {bal}"
+              f" Birr\n📉 Min Withdraw: {MIN_WITHDRAW} Birr\n\n(ስለሚወጡት"
+              " የብር መጠን ቁጥር ብቻ ያስገቡ):</b>"
           ),
           parse_mode="html",
       )
+      bot.register_next_step_handler(msg, process_withdraw_amount)
 
-  elif text == "🟢 Statistics":
+  elif text == "📊 Statistics":
     total_users = len(users_db)
     bot.send_message(
         user_id,
@@ -337,6 +332,98 @@ def handle_buttons(message):
         ),
         parse_mode="html",
     )
+
+  elif text == "📢 Promotion":
+    markup = types.InlineKeyboardMarkup()
+    markup.add(
+        types.InlineKeyboardButton(
+            "👑 Contact Admin", url=f"https://t.me/{ADMIN_USERNAME.replace('@', '')}"
+        )
+    )
+    bot.send_message(
+        user_id,
+        (
+            f"<b>📢 Channel & Bot Promotion Services:\n\n✨ ቻናልዎን ወይም ቦትዎን"
+            f" ማስተዋወቅ (Promot ማድረግ) ይፈልጋሉ?\n\n📲 እባክዎ አድሚንን በቀጥታ ያናግሩ፦"
+            f" {ADMIN_USERNAME}</b>"
+        ),
+        parse_mode="html",
+        reply_markup=markup,
+    )
+
+
+def process_withdraw_amount(message):
+  user_id = message.from_user.id
+  try:
+    amount = float(message.text.strip())
+  except ValueError:
+    bot.send_message(
+        user_id, "<b>❌ Please enter a valid number! ቁጥር ብቻ ያስገቡ።</b>", parse_mode="html"
+    )
+    return
+
+  bal = users_db[user_id]["balance"]
+
+  if amount < MIN_WITHDRAW:
+    bot.send_message(
+        user_id,
+        (
+            f"<b>❌ Minimum withdrawal amount is {MIN_WITHDRAW} Birr!</b>"
+            f" ፋብሪካው የሚፈቅደው ዝቅተኛው ማውጫ {MIN_WITHDRAW} ብር ነው።"
+        ),
+        parse_mode="html",
+    )
+    return
+
+  if amount > bal:
+    bot.send_message(
+        user_id,
+        (
+            f"<b>❌ Insufficient balance! በቂ ሒሳብ የለዎትም።\n💵 Your Balance: {bal}"
+            " Birr</b>"
+        ),
+        parse_mode="html",
+    )
+    return
+
+  users_db[user_id]["balance"] -= amount
+  wallet_num = users_db[user_id]["wallet"]
+  username = message.from_user.username or "No Username"
+  first_name = message.from_user.first_name
+
+  admin_msg = (
+      f"🚨 **New Withdrawal Request!**\n\n"
+      f"👤 User ID: `{user_id}`\n"
+      f"🏷 Username: @{username}\n"
+      f"💳 Telebirr Number: `{wallet_num}`\n"
+      f"💰 Amount: {amount} Birr"
+  )
+  try:
+    bot.send_message(ADMIN_ID, admin_msg, parse_mode="markdown")
+  except:
+    pass
+
+  if PAYOUT_CHANNEL:
+    # ሙሉ ስልክ ቁጥር እንዲታይ ተደርጓል
+    payout_msg = (
+        f"✅ **New Successful Withdrawal!** 💸\n\n"
+        f"👤 User: {first_name} (@{username})\n"
+        f"💰 Amount: `{amount} Birr`\n"
+        f"💳 Method: Telebirr (`{wallet_num}`)\n"
+        f"🟢 Status: **Paid / Sent Successfully**"
+    )
+    try:
+      bot.send_message(PAYOUT_CHANNEL, payout_msg, parse_mode="markdown")
+    except:
+      pass
+
+  success_text = (
+      f"<b>✅ Withdrawal request submitted successfully!\n"
+      f"💳 Telebirr: {wallet_num}\n"
+      f"💰 Amount: {amount} Birr\n\n"
+      f"It will be sent to your account soon!</b>"
+  )
+  bot.send_message(user_id, success_text, parse_mode="html")
 
 
 def process_wallet_input(message):
@@ -368,37 +455,13 @@ def process_wallet_input(message):
 
 @bot.callback_query_handler(
     func=lambda call: call.data
-    in [
-        "set_minw",
-        "set_pref",
-        "broadcast",
-        "manage_channels",
-        "admin_mgmt",
-        "back_home",
-        "add_admin",
-        "remove_admin",
-        "back_admin",
-        "add_ch",
-        "remove_ch",
-    ]
+    in ["set_minw", "set_pref", "broadcast", "manage_channels"]
 )
 def admin_callbacks(call):
-  if call.from_user.id not in ADMINS:
+  if call.from_user.id != ADMIN_ID:
     return
 
-  if call.data == "back_home":
-    try:
-      bot.delete_message(call.message.chat.id, call.message.message_id)
-    except:
-      pass
-    bot.send_message(
-        call.message.chat.id,
-        "<b>🏠 Returned to Main Menu / ወደ ዋናው ማኑ ተመልሰዋል 👇</b>",
-        parse_mode="html",
-        reply_markup=main_keyboard(),
-    )
-
-  elif call.data == "set_minw":
+  if call.data == "set_minw":
     msg = bot.send_message(
         call.message.chat.id,
         "<b>Enter new minimum withdrawal amount (number only):</b>",
@@ -428,68 +491,16 @@ def admin_callbacks(call):
     markup.add(
         types.InlineKeyboardButton("➕ Add Channel", callback_data="add_ch"),
         types.InlineKeyboardButton("➖ Remove Channel", callback_data="remove_ch"),
-        types.InlineKeyboardButton("🔙 Back to Admin", callback_data="back_admin"),
     )
     bot.send_message(
         call.message.chat.id,
-        f"<b>📢 Current Channels:\n{ch_list}\n\nSelect action:</b>",
+        (
+            f"<b>📢 Current Channels:\n{ch_list}\n- Payout Channel:"
+            f" {PAYOUT_CHANNEL}\n\nSelect action:</b>"
+        ),
         parse_mode="html",
         reply_markup=markup,
     )
-
-  elif call.data == "admin_mgmt":
-    adm_list = "\n".join([str(a) for a in ADMINS])
-    markup = types.InlineKeyboardMarkup()
-    markup.add(
-        types.InlineKeyboardButton("➕ Add Admin", callback_data="add_admin"),
-        types.InlineKeyboardButton("➖ Remove Admin", callback_data="remove_admin"),
-        types.InlineKeyboardButton("🔙 Back to Admin", callback_data="back_admin"),
-    )
-    bot.send_message(
-        call.message.chat.id,
-        f"<b>👑 Current Admins (IDs):\n{adm_list}\n\nSelect action:</b>",
-        parse_mode="html",
-        reply_markup=markup,
-    )
-
-  elif call.data == "add_admin":
-    msg = bot.send_message(
-        call.message.chat.id,
-        "<b>➕ Enter Telegram User ID to add as Admin:</b>",
-        parse_mode="html",
-    )
-    bot.register_next_step_handler(msg, add_admin_process)
-
-  elif call.data == "remove_admin":
-    msg = bot.send_message(
-        call.message.chat.id,
-        "<b>➖ Enter Telegram User ID to remove from Admin:</b>",
-        parse_mode="html",
-    )
-    bot.register_next_step_handler(msg, remove_admin_process)
-
-  elif call.data == "back_admin":
-    try:
-      bot.delete_message(call.message.chat.id, call.message.message_id)
-    except:
-      pass
-    admin_panel(call.message)
-
-  elif call.data == "add_ch":
-    msg = bot.send_message(
-        call.message.chat.id,
-        "<b>➕ Enter channel username to add (e.g., @channelname):</b>",
-        parse_mode="html",
-    )
-    bot.register_next_step_handler(msg, add_channel_process)
-
-  elif call.data == "remove_ch":
-    msg = bot.send_message(
-        call.message.chat.id,
-        "<b>➖ Enter channel username to remove (e.g., @channelname):</b>",
-        parse_mode="html",
-    )
-    bot.register_next_step_handler(msg, remove_channel_process)
 
 
 def save_new_minw(message):
@@ -540,6 +551,27 @@ def execute_broadcast(message):
   )
 
 
+@bot.callback_query_handler(func=lambda call: call.data in ["add_ch", "remove_ch"])
+def channel_modify_callbacks(call):
+  if call.from_user.id != ADMIN_ID:
+    return
+
+  if call.data == "add_ch":
+    msg = bot.send_message(
+        call.message.chat.id,
+        "<b>➕ Enter channel username to add (e.g., @channelname):</b>",
+        parse_mode="html",
+    )
+    bot.register_next_step_handler(msg, add_channel_process)
+  elif call.data == "remove_ch":
+    msg = bot.send_message(
+        call.message.chat.id,
+        "<b>➖ Enter channel username to remove (e.g., @channelname):</b>",
+        parse_mode="html",
+    )
+    bot.register_next_step_handler(msg, remove_channel_process)
+
+
 def add_channel_process(message):
   global CHANNELS
   ch = message.text.strip()
@@ -575,60 +607,6 @@ def remove_channel_process(message):
   else:
     bot.reply_to(
         message, f"<b>⚠️ Channel not found in list!</b>", parse_mode="html"
-    )
-
-
-def add_admin_process(message):
-  global ADMINS
-  try:
-    new_adm = int(message.text.strip())
-    if new_adm not in ADMINS:
-      ADMINS.append(new_adm)
-      bot.reply_to(
-          message,
-          f"<b>✅ User ID {new_adm} added as Admin successfully!</b>",
-          parse_mode="html",
-      )
-    else:
-      bot.reply_to(
-          message, f"<b>⚠️ This user is already an Admin!</b>", parse_mode="html"
-      )
-  except ValueError:
-    bot.reply_to(
-        message,
-        "<b>❌ Invalid ID! Please send numbers only.</b>",
-        parse_mode="html",
-    )
-
-
-def remove_admin_process(message):
-  global ADMINS
-  try:
-    rem_adm = int(message.text.strip())
-    if rem_adm == INITIAL_ADMIN:
-      bot.reply_to(
-          message,
-          "<b>❌ You cannot remove the main primary admin!</b>",
-          parse_mode="html",
-      )
-      return
-
-    if rem_adm in ADMINS:
-      ADMINS.remove(rem_adm)
-      bot.reply_to(
-          message,
-          f"<b>✅ User ID {rem_adm} removed from Admins successfully!</b>",
-          parse_mode="html",
-      )
-    else:
-      bot.reply_to(
-          message, f"<b>⚠️ Admin ID not found in list!</b>", parse_mode="html"
-      )
-  except ValueError:
-    bot.reply_to(
-        message,
-        "<b>❌ Invalid ID! Please send numbers only.</b>",
-        parse_mode="html",
     )
 
 
