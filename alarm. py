@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Period Alarm App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            color: #00ffcc;
+            overflow-y: auto;
+        }
+        .app-container {
+            width: 100%;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: relative;
+            padding-bottom: 50px;
+        }
+        .lang-container {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            z-index: 10;
+        }
+        .lang-btn {
+            background-color: #2c2c2c;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        .screen.active {
+            display: flex;
+        }
+        h2 {
+            margin-bottom: 15px;
+            color: #ffffff;
+            font-size: 22px;
+            text-align: center;
+        }
+        p {
+            color: #bbb;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            text-align: left;
+            font-size: 13px;
+            color: #bbb;
+            width: 100%;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 4px;
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            border-color: #00ffcc;
+            outline: none;
+        }
+        button.main-btn {
+            width: 100%;
+            background-color: #00ffcc;
+            color: #121212;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+        button.main-btn:hover {
+            background-color: #00b386;
+        }
+        button.stop-btn {
+            background-color: #ff4d4d !important;
+            color: #fff !important;
+        }
+        button.stop-btn:hover {
+            background-color: #cc0000 !important;
+        }
+        .switch-text {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #aaa;
+            cursor: pointer;
+            text-align: center;
+        }
+        .switch-text span {
+            color: #00ffcc;
+            text-decoration: underline;
+        }
+        #status {
+            margin-top: 15px;
+            font-size: 15px;
+            color: #ffaa00;
+            text-align: center;
+            font-weight: bold;
+        }
+        .live-clock {
+            font-size: 18px;
+            color: #00ffcc;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .period-card {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .period-title {
+            font-size: 14px;
+            color: #00ffcc;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .time-row {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="lang-container">
+            <button class="lang-btn" onclick="toggleLanguage()" id="langBtn">EN</button>
+        </div>
+
+        <!-- 1. ሎጊን ገጽ -->
+        <div id="loginScreen" class="screen active">
+            <h2 id="loginTitle">⚡ መግቢያ (Login)</h2>
+            <label id="emailLabel">ኢሜይል (Email):</label>
+            <input type="email" id="loginEmail" placeholder="name@example.com">
+            
+            <label id="passLabel">የይለፍ ቃል (Password):</label>
+            <input type="password" id="loginPass" placeholder="••••••••">
+            
+            <button class="main-btn" onclick="handleLogin()" id="loginBtn">ግባ (Login)</button>
+            <div class="switch-text" onclick="showScreen('registerScreen')">
+                <span id="noAccountText">አካውንት የለህም? ይመዝገቡ</span>
+            </div>
+        </div>
+
+        <!-- 2. ምዝገባ ገጽ -->
+        <div id="registerScreen" class="screen">
+            <h2 id="regTitle">⚡ ምዝገባ (Register)</h2>
+            <label id="regEmailLabel">ኢሜይል (Email):</label>
+            <input type="email" id="regEmail" placeholder="name@example.com">
+            
+            <label id="regPassLabel">የይለፍ ቃል (Password):</label>
+            <input type="password" id="regPass" placeholder="••••••••">
+            
+            <button class="main-btn" onclick="handleRegister()" id="regBtn">ተመዝገብ (Register)</button>
+            <div class="switch-text" onclick="showScreen('loginScreen')">
+                <span id="hasAccountText">አካውንት አለህ? ግባ</span>
+            </div>
+        </div>
+
+        <!-- 3. እንኳን ደህና መጡ ገጽ -->
+        <div id="welcomeScreen" class="screen">
+            <h2 id="welcomeTitle">🎉 እንኳን ደህና መጡ!</h2>
+            <p id="welcomeDesc">ስማርት ፔሪድ አላርም መተግበሪያን በተሳካ ሁኔታ ተቀላቅለዋል።</p>
+            <button class="main-btn" onclick="showScreen('alarmScreen')" id="startAppBtn">ወደ አላርም ገጽ ኺድ</button>
+        </div>
+
+        <!-- 4. ዋናው የ 8 Periods አላርም ገጽ -->
+        <div id="alarmScreen" class="screen">
+            <h2 id="alarmHeader">⚡ Smart Period Alarm</h2>
+            
+            <div class="live-clock" id="liveClock">አሁን ያለው ሰዓት: --:--:--</div>
+            
+            <label id="fileLabelText">የድምፅ ፋይል ይምረጡ (MP3):</label>
+            <input type="file" id="soundFile" accept="audio/*">
+
+            <div style="width: 100%; margin-top: 15px;">
+                <h3 style="font-size: 15px; color: #fff; margin-bottom: 10px;" id="periodsHeader">የ 8 ፔሪዶች ሰዓት (AM/PM) እና ቆይታ</h3>
+                
+                <div id="periodsContainer"></div>
+            </div>
+            
+            <button class="main-btn" id="controlBtn" onclick="toggleAlarmSystem()">አላርም ጀምር (Start Alarm)</button>
+            
+            <div id="status">ሁኔታ፦ አላርሙ አልተጀመረም</div>
+        </div>
+    </div>
+
+    <audio id="alarmAudio"></audio>
+
+    <script>
+        let currentLang = 'am'; 
+        let isAlarmRunning = false;
+        let alarmInterval;
+        let activeTimeouts = [];
+
+        const translations = {
+            am: {
+                loginTitle: "⚡ መግቢያ (Login)",
+                emailLabel: "ኢሜይል (Email):",
+                passLabel: "የይለፍ ቃል (Password):",
+                loginBtn: "ግባ (Login)",
+                noAccountText: "አካውንት የለህም? ይመዝገቡ",
+                regTitle: "⚡ ምዝገባ (Register)",
+                regEmailLabel: "ኢሜይል (Email):",
+                regPassLabel: "የይለፍ ቃል (Password):",
+                regBtn: "ተመዝገብ (Register)",
+                hasAccountText: "አካውንት አለህ? ግባ",
+                welcomeTitle: "🎉 እንኳን ደህና መጡ!",
+                welcomeDesc: "ስማርት ፔሪድ አላርም መተግበሪያን በተሳካ ሁኔታ ተቀላቅለዋል።",
+                startAppBtn: "ወደ አላርም ገጽ ኺድ",
+                alarmHeader: "⚡ Smart Period Alarm",
+                fileLabelText: "የድምፅ ፋይል ይምረጡ (MP3):",
+                periodsHeader: "የ 8 ፔሪዶች ሰዓት (AM/PM) እና ቆይታ",
+                startBtnText: "አላርም ጀምር (Start Alarm)",
+                stopBtnText: "አላርም አቁም (Stop Alarm)",
+                statusInit: "ሁኔታ፦ አላርሙ አልተጀመረም",
+                statusRunning: "አላርም በሂደት ላይ ነው... ሰዓቱን እየጠበቀ ነው",
+                statusRinging: "ድምፅ እየተጫወተ ነው! 🔊"
+            },
+            en: {
+                loginTitle: "⚡ Login",
+                emailLabel: "Email:",
+                passLabel: "Password:",
+                loginBtn: "Login",
+                noAccountText: "Don't have an account? Register",
+                regTitle: "⚡ Register",
+                regEmailLabel: "Email:",
+                regPassLabel: "Password:",
+                regBtn: "Register",
+                hasAccountText: "Have an account? Login",
+                welcomeTitle: "🎉 Welcome!",
+                welcomeDesc: "You have successfully joined the Smart Period Alarm app.",
+                startAppBtn: "Go to Alarm",
+                alarmHeader: "⚡ Smart Period Alarm",
+                fileLabelText: "Choose Sound File (MP3):",
+                periodsHeader: "8 Periods Time (AM/PM) & Duration",
+                startBtnText: "Start Alarm",
+                stopBtnText: "Stop Alarm",
+                statusInit: "Status: Alarm not started",
+                statusRunning: "Alarm is running... waiting for time",
+                statusRinging: "Playing sound! 🔊"
+            }
+        };
+
+        // ደቂቃዎችን ከ 00 እስከ 59 በሙሉ በኮድ ማመንጨት
+        let minuteOptionsHTML = '';
+        for (let m = 0; m < 60; m++) {
+            let mStr = String(m).padStart(2, '0');
+            minuteOptionsHTML += `<option value="${mStr}">${mStr}</option>`;
+        }
+
+        function renderPeriods() {
+            const container = document.getElementById('periodsContainer');
+            container.innerHTML = '';
+            for (let i = 1; i <= 8; i++) {
+                container.innerHTML += `
+                    <div class="period-card">
+                        <div class="period-title">Period ${i}</div>
+                        <div class="time-row">
+                            <div style="flex: 1;">
+                                <label style="font-size:10px;">ሰዓት (Hour):</label>
+                                <select id="p_hr_${i}">
+                                    <option value="01">1</option><option value="02">2</option><option value="03">3</option>
+                                    <option value="04">4</option><option value="05">5</option><option value="06">6</option>
+                                    <option value="07">7</option><option value="08">8</option><option value="09">9</option>
+                                    <option value="10" selected>10</option><option value="11">11</option><option value="12">12</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size:10px;">ደቂቃ (Min):</label>
+                                <select id="p_min_${i}">
+                                    ${minuteOptionsHTML}
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size:10px;">AM/PM:</label>
+                                <select id="p_ampm_${i}">
+                                    <option value="AM">AM</option><option value="PM" selected>PM</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size:10px;">ቆይታ (sec):</label>
+                                <input type="number" id="p_dur_${i}" value="10" min="1">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        renderPeriods();
+
+        setInterval(() => {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const formattedHours = String(hours).padStart(2, '0');
+
+            document.getElementById('liveClock').innerText = (currentLang === 'am' ? "አሁን ያለው ሰዓት: " : "Current Time: ") + `${formattedHours}:${minutes}:${seconds} ${ampm}`;
+        }, 1000);
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'am' ? 'en' : 'am';
+            document.getElementById('langBtn').innerText = currentLang === 'am' ? 'EN' : 'AM';
+            
+            const t = translations[currentLang];
+            document.getElementById('loginTitle').innerText = t.loginTitle;
+            document.getElementById('emailLabel').innerText = t.emailLabel;
+            document.getElementById('passLabel').innerText = t.passLabel;
+            document.getElementById('loginBtn').innerText = t.loginBtn;
+            document.getElementById('noAccountText').innerText = t.noAccountText;
+            
+            document.getElementById('regTitle').innerText = t.regTitle;
+            document.getElementById('regEmailLabel').innerText = t.regEmailLabel;
+            document.getElementById('regPassLabel').innerText = t.regPassLabel;
+            document.getElementById('regBtn').innerText = t.regBtn;
+            document.getElementById('hasAccountText').innerText = t.hasAccountText;
+            
+            document.getElementById('welcomeTitle').innerText = t.welcomeTitle;
+            document.getElementById('welcomeDesc').innerText = t.welcomeDesc;
+            document.getElementById('startAppBtn').innerText = t.startAppBtn;
+            
+            document.getElementById('alarmHeader').innerText = t.alarmHeader;
+            document.getElementById('fileLabelText').innerText = t.fileLabelText;
+            document.getElementById('periodsHeader').innerText = t.periodsHeader;
+            
+            const btn = document.getElementById('controlBtn');
+            if(!isAlarmRunning) {
+                btn.innerText = t.startBtnText;
+                document.getElementById('status').innerText = t.statusInit;
+            } else {
+                btn.innerText = t.stopBtnText;
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function handleLogin() {
+            if(!document.getElementById('loginEmail').value) {
+                alert(currentLang === 'am' ? "እባክዎ ኢሜይል ያስገቡ!" : "Please enter email!");
+                return;
+            }
+            showScreen('welcomeScreen');
+        }
+
+        function handleRegister() {
+            if(!document.getElementById('regEmail').value) {
+                alert(currentLang === 'am' ? "እባክዎ ኢሜይል ያስገቡ!" : "Please enter email!");
+                return;
+            }
+            showScreen('welcomeScreen');
+        }
+
+        function toggleAlarmSystem() {
+            const btn = document.getElementById('controlBtn');
+            const statusDiv = document.getElementById('status');
+            const t = translations[currentLang];
+
+            if (!isAlarmRunning) {
+                isAlarmRunning = true;
+                btn.innerText = t.stopBtnText;
+                btn.classList.add('stop-btn');
+                statusDiv.innerText = t.statusRunning;
+
+                const soundFileInput = document.getElementById('soundFile').files[0];
+                const audioEle = document.getElementById('alarmAudio');
+                if (soundFileInput) {
+                    audioEle.src = URL.createObjectURL(soundFileInput);
+                } else {
+                    audioEle.src = "https://www.soundjay.com/buttons/sounds/beep-07a.mp3";
+                }
+
+                clearInterval(alarmInterval);
+                alarmInterval = setInterval(checkPeriodsTime, 1000);
+
+            } else {
+                stopAlarmCompletely();
+            }
+        }
+
+        let triggeredPeriods = {};
+
+        function checkPeriodsTime() {
+            const now = new Date();
+            let currentHour24 = now.getHours();
+            const currentMin = String(now.getMinutes()).padStart(2, '0');
+            const currentAmPm = currentHour24 >= 12 ? 'PM' : 'AM';
+            
+            let currentHour12 = currentHour24 % 12;
+            currentHour12 = currentHour12 ? currentHour12 : 12;
+            const formattedHour12 = String(currentHour12).padStart(2, '0');
+
+            for (let i = 1; i <= 8; i++) {
+                const pHr = document.getElementById(`p_hr_${i}`).value;
+                const pMin = document.getElementById(`p_min_${i}`).value;
+                const pAmPm = document.getElementById(`p_ampm_${i}`).value;
+
+                if (pHr === formattedHour12 && pMin === currentMin && pAmPm === currentAmPm) {
+                    if (!triggeredPeriods[i]) {
+                        triggeredPeriods[i] = true;
+                        triggerPeriodAlarm(i);
+                    }
+                } else {
+                    triggeredPeriods[i] = false;
+                }
+            }
+        }
+
+        function triggerPeriodAlarm(periodNum) {
+            const statusDiv = document.getElementById('status');
+            const audioEle = document.getElementById('alarmAudio');
+            const t = translations[currentLang];
+
+            statusDiv.innerText = `Period ${periodNum} - ` + t.statusRinging;
+            audioEle.currentTime = 0;
+            audioEle.play().catch(e => console.log("Audio play error:", e));
+
+            const durationSec = parseInt(document.getElementById(`p_dur_${periodNum}`).value) || 10;
+            
+            const timeoutId = setTimeout(() => {
+                if(isAlarmRunning) {
+                    audioEle.pause();
+                    audioEle.currentTime = 0;
+                    statusDiv.innerText = t.statusRunning;
+                }
+            }, durationSec * 1000);
+
+            activeTimeouts.push(timeoutId);
+        }
+
+        function stopAlarmCompletely() {
+            isAlarmRunning = false;
+            clearInterval(alarmInterval);
+            
+            activeTimeouts.forEach(id => clearTimeout(id));
+            activeTimeouts = [];
+
+            const audioEle = document.getElementById('alarmAudio');
+            audioEle.pause();
+            audioEle.currentTime = 0;
+
+            const btn = document.getElementById('controlBtn');
+            const t = translations[currentLang];
+            btn.innerText = t.startBtnText;
+            btn.classList.remove('stop-btn');
+            statusDiv.innerText = t.statusInit;
+        }
+    </script>
+</body>
+</html>
