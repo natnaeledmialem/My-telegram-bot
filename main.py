@@ -9,7 +9,7 @@ BOT_TOKEN = "8884008636:AAG9Hu0WUdqvXH7zs6O6wV1dJ0Gva2fGG-Q"
 CHANNELS = ["@et5_m"]
 PAYOUT_CHANNEL = "@et5_m"  # የPayout ቻናል (እዚህ ጋር የርስዎን ቻናል ያስገቡ)
 ADMIN_ID = 7435977089
-ADMIN_USERNAME = "@Smadmin_16"  # የርሶ ዩዘርናም (ለ Promotion)
+ADMIN_USERNAME = "@Jolinton2"  # የርሶ ዩዘርናም (ለ Promotion)
 REFERRAL_BONUS = 3.00
 MIN_WITHDRAW = 30.00
 # ---------------------
