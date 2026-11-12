@@ -5,7 +5,7 @@ import telebot
 from telebot import types
 
 # --- ማስተካከያ ቦታዎች ---
-BOT_TOKEN = "9298241429:AAHUqADDQguFPx8OI5ODSPlfRR0SIV3W1iE"
+BOT_TOKEN = "8838986685:AAH1UXO5MuHlRPuNK2Y8j00as_3n439Kq9E"
 CHANNELS = ["@et5_m"]
 PAYOUT_CHANNEL = "@et5_m"  # የPayout ቻናል (እዚህ ጋር የርስዎን ቻናል ያስገቡ)
 ADMIN_ID = 7435977089
