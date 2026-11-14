@@ -8,8 +8,8 @@ from telebot import types
 BOT_TOKEN = "8838986685:AAH1UXO5MuHlRPuNK2Y8j00as_3n439Kq9E"
 CHANNELS = ["@et5_m"]
 PAYOUT_CHANNEL = "@et5_m"  # የPayout ቻናል (እዚህ ጋር የርስዎን ቻናል ያስገቡ)
-ADMIN_ID = 7435977089
-ADMIN_USERNAME = "@Jolinton2"  # የርሶ ዩዘርናም (ለ Promotion)
+ADMIN_ID = 8864553216
+ADMIN_USERNAME = "@vodieTech"  # የርሶ ዩዘርናም (ለ Promotion)
 REFERRAL_BONUS = 3.00
 MIN_WITHDRAW = 30.00
 # ---------------------
